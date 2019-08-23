@@ -1,0 +1,344 @@
+// Test program for the MD_YX5300 library
+//
+// Menu driven interface using the Serial Monitor to test individual functions.
+//
+
+#include <MD_YX5300.h>    // MP3 prehravac
+#include <HCSR04.h>       // mereni vzdalenosti
+
+// Connections for serial interface to the YX5300 module
+const uint8_t ARDUINO_RX = 6;    // connect to TX of MP3 Player module
+const uint8_t ARDUINO_TX = 5;    // connect to RX of MP3 Player module
+
+// Definice globalnich promennych MP3 prehravac
+MD_YX5300 mp3(ARDUINO_RX, ARDUINO_TX);
+bool bUseCallback = true; // use callbacks?
+bool bUseSynch = false;   // use synchronous? 
+
+// Definice globalnich promennych Meric vzdalenosti
+HCSR04 senzorVstup(4,3);//initialisation class HCSR04 (trig pin , echo pin)
+//HCSR04 senzorVystup(5,6);//initialisation class HCSR04 (trig pin , echo pin)
+
+int senzorVstupSignal =0;
+int senzorVystupSignal =0;
+int pruchodSpravnymSmerem =0;
+
+//Definice globalnich promennzch pro svetla
+int ledSvetlo01 = 7;
+int ledSvetlo02 = 9;
+int ledSvetlo03 = 11;
+
+
+void cbResponse(const MD_YX5300::cbData *status)
+// Used to process device responses either as a library callback function
+// or called locally when not in callback mode.
+{
+  if (bUseSynch)
+    Serial.print(F("\nSync Status: "));
+  else
+    Serial.print(F("\nCback status: "));
+
+  switch (status->code)
+  {
+  case MD_YX5300::STS_OK:         Serial.print(F("STS_OK"));         break;
+  case MD_YX5300::STS_TIMEOUT:    Serial.print(F("STS_TIMEOUT"));    break;
+  case MD_YX5300::STS_VERSION:    Serial.print(F("STS_VERSION"));    break;
+  case MD_YX5300::STS_CHECKSUM:   Serial.print(F("STS_CHECKSUM"));    break;
+  case MD_YX5300::STS_TF_INSERT:  Serial.print(F("STS_TF_INSERT"));  break;
+  case MD_YX5300::STS_TF_REMOVE:  Serial.print(F("STS_TF_REMOVE"));  break;
+  case MD_YX5300::STS_ERR_FILE:   Serial.print(F("STS_ERR_FILE"));   break;
+  case MD_YX5300::STS_ACK_OK:     Serial.print(F("STS_ACK_OK"));     break;
+  case MD_YX5300::STS_FILE_END:   Serial.print(F("STS_FILE_END"));   break;
+  case MD_YX5300::STS_INIT:       Serial.print(F("STS_INIT"));       break;
+  case MD_YX5300::STS_STATUS:     Serial.print(F("STS_STATUS"));     break;
+  case MD_YX5300::STS_EQUALIZER:  Serial.print(F("STS_EQUALIZER"));  break;
+  case MD_YX5300::STS_VOLUME:     Serial.print(F("STS_VOLUME"));     break;
+  case MD_YX5300::STS_TOT_FILES:  Serial.print(F("STS_TOT_FILES"));  break;
+  case MD_YX5300::STS_PLAYING:    Serial.print(F("STS_PLAYING"));    break;
+  case MD_YX5300::STS_FLDR_FILES: Serial.print(F("STS_FLDR_FILES")); break;
+  case MD_YX5300::STS_TOT_FLDR:   Serial.print(F("STS_TOT_FLDR"));   break;
+  default: Serial.print(F("STS_??? 0x")); Serial.print(status->code, HEX); break;
+  }
+
+  Serial.print(F(", 0x"));
+  Serial.print(status->data, HEX);
+}
+
+void setCallbackMode(bool b)
+{
+  bUseCallback = b;
+  Serial.print(F("\n>Callback "));
+  Serial.print(b ? F("ON") : F("OFF"));
+  mp3.setCallback(b ? cbResponse : nullptr);
+}
+
+void setSynchMode(bool b)
+{
+  bUseSynch = b;
+  Serial.print(F("\n>Synchronous "));
+  Serial.print(b ? F("ON") : F("OFF"));
+  mp3.setSynchronous(b);
+}
+
+
+
+
+
+void setup()
+{
+  Serial.begin(57600);
+  mp3.begin();
+
+  setCallbackMode(bUseCallback);
+  setSynchMode(bUseSynch);
+
+  pinMode(ledSvetlo01, OUTPUT);
+  pinMode(ledSvetlo02, OUTPUT);
+  pinMode(ledSvetlo03, OUTPUT);
+  
+}
+
+void loop()
+{
+
+int senzorVstupVzdalenost = senzorVstup.dist();
+//int senzorVystupVzdalenost = senzorVystup.dist();
+
+int tlacitkoSepnuto = 0;
+int pruchodSpravnymSmerem = 0;
+ 
+
+if ((senzorVstupVzdalenost > 20)&& (senzorVstupVzdalenost < 50))  {
+  senzorVstupSignal =1;
+  }
+
+/*if ((senzorVystupVzdalenost > 20)&& (senzorVystupVzdalenost < 150))  {
+  senzorVystupSignal =1;
+  }
+*/
+
+// pokud navstevnici prochazi spravnym smerem, nebo pokud obsluha stiskne tlacitko spusti se sekvence
+if ((pruchodSpravnymSmerem == 1) || (senzorVstupSignal == 1)) {
+ 
+// if pokud je tlacitko sepnuto
+//SenzorVstup
+//SenzorVystup
+
+//Pokud je tlacitko sepnuto nebo jdou navstevnici spravnym smerem
+
+  Serial.println();
+  Serial.println("Start sekvence");
+  mp3.playStop();
+
+
+  // Rozsvit svetlo 1
+  Serial.println("Rozsvit svetlo 1 - panel");
+  digitalWrite(ledSvetlo01, HIGH); 
+  delay(90000);
+  Serial.println("Zhasni svetlo 1 - panel");
+  digitalWrite(ledSvetlo01, LOW); 
+  delay(1000);
+
+  // Rozsvit svetlo Kostak 
+  /*Serial.println("Rozsvit svetlo 3 - Kostak");
+  digitalWrite(ledSvetlo03, HIGH); 
+  delay(1000);
+  Serial.println("Zhasni svetlo 3 - Kostak");
+  digitalWrite(ledSvetlo03, LOW); 
+  delay(1000);
+  */
+  
+  // Hrat stopu 1
+  Serial.println("Prehravam stopu 01");
+  mp3.playStop();
+  mp3.volume(100);
+  mp3.playTrack(1);
+  // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(100);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(100);
+  
+// Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(200);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(200);
+  // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(50);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(50);
+
+    // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(100);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(100);
+
+//Kostak probliknuti
+  Serial.println("Rozsvit svetlo 3 - Kostak - probliknuti");
+  digitalWrite(ledSvetlo03, HIGH); 
+  delay(10);
+  Serial.println("Zhasni svetlo 3 - Kostak - probliknuti");
+  digitalWrite(ledSvetlo03, LOW); 
+  delay(10);
+  
+  
+// Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(200);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(200);
+  // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(50);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(50);
+
+   digitalWrite(ledSvetlo02, HIGH); 
+  delay(100);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(100);
+  
+// Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(200);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(200);
+  // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(50);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(50);
+
+    // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(100);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(100);
+  
+// Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(200);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(200);
+  // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(50);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(50);
+
+//Kostak probliknuti
+  Serial.println("Rozsvit svetlo 3 - Kostak - probliknuti");
+  digitalWrite(ledSvetlo03, HIGH); 
+  delay(10);
+  Serial.println("Zhasni svetlo 3 - Kostak - probliknuti");
+  digitalWrite(ledSvetlo03, LOW); 
+  delay(10);
+  
+// Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(200);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(200);
+  // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(50);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(50);
+
+    // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(100);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(100);
+  
+// Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(200);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(200);
+  // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(50);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(50);
+
+   digitalWrite(ledSvetlo02, HIGH); 
+  delay(100);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(100);
+  
+// Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(200);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(200);
+  // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(50);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(50);
+
+    // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(100);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(100);
+  
+// Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(200);
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(200);
+  // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, HIGH); 
+  delay(50);
+
+  delay(6000);
+  
+  // Hrat stopu 2  
+  Serial.println("Prehravam stopu 02"); 
+  mp3.playStop();
+ // mp3.volume(50);
+  mp3.playTrack(2);
+  delay(21000);
+
+
+  // Rozsvit svetlo 2
+  digitalWrite(ledSvetlo02, LOW); 
+  delay(3000);
+
+  Serial.println("Rozsvit svetlo 3 - Kostak - Ukaz");
+  digitalWrite(ledSvetlo03, HIGH); 
+  delay(10);
+  
+  // Hrat stopu 3  
+  Serial.println("Prehravam stopu 03"); 
+  mp3.playStop();
+  delay(1000);
+  mp3.playTrack(3);
+  delay(4000);
+
+  mp3.playStop();
+  delay(1000);
+  mp3.playTrack(3);
+  delay(4000);
+
+  mp3.playStop();
+  delay(1000);
+  mp3.playTrack(3);
+  delay(5000);
+
+
+  Serial.println("Zhasni svetlo 3 - Kostak - schov");
+  digitalWrite(ledSvetlo03, LOW); 
+  delay(10);
+  
+
+  Serial.println("Konec sekvence");  
+  // mp3.check();
+  senzorVstupSignal =0;
+  }
+}
