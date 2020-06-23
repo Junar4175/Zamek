@@ -14,6 +14,9 @@ MD_YX5300 mp3(ARDUINO_RX, ARDUINO_TX);
 bool bUseCallback = true; // use callbacks?
 bool bUseSynch = false;   // use synchronous? 
 
+bool nepotrebnaPromenna = false;   // use synchronous? 
+
+
 void cbResponse(const MD_YX5300::cbData *status)
 // Used to process device responses either as a library callback function
 // or called locally when not in callback mode.
